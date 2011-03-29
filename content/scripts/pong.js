@@ -41,7 +41,6 @@ window.onload = function () {
 	// clear the field
 	UpdateScores();
 	ResetBall();
-	ResetPaddles();
 	SetBallPos();
 	ResetPaddles();
 	SetPaddlePos();
@@ -55,7 +54,6 @@ window.onload = function () {
 	document.body.onmouseup = MouseUp;
 	
 	// and return
-	page.style.display="block";
 	return true;
 }
 
@@ -166,6 +164,12 @@ function ResetBall() {
 	ballVy = 1/1000;
 }
 
+function SetBallPos() {
+	// update the ball element to match the ballX & ballY variables
+	ball.style.left = ballX+"px";
+	ball.style.top = ballY+"px";
+}
+
 function ResetPaddles() {
 	var y = parseInt((HEIGHT-PADDLEHEIGHT)/2);
 	if(controllingPaddle != 1)
@@ -174,10 +178,10 @@ function ResetPaddles() {
 		paddle2Y = y;
 }
 
-function SetBallPos() {
-	// update the ball element to match the ballX & ballY variables
-	ball.style.left = ballX+"px";
-	ball.style.top = ballY+"px";
+function SetPaddlePos() {
+	// update the paddle elements to match the paddle Y variables
+	paddle1.style.top = paddle1Y+"px";
+	paddle2.style.top = paddle2Y+"px";
 }
 
 function UpdatePaddlePos(ms,paddle) {
@@ -203,12 +207,6 @@ function UpdatePaddlePos(ms,paddle) {
 		paddle2Y = (HEIGHT-1)-PADDLEHEIGHT;
 		paddle2Vy = 0;
 	}
-}
-
-function SetPaddlePos() {
-	// update the paddle elements to match the paddle Y variables
-	paddle1.style.top = paddle1Y+"px";
-	paddle2.style.top = paddle2Y+"px";
 }
 
 function UpdateScores() {
