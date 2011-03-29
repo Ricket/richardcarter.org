@@ -1,26 +1,40 @@
 #!/usr/bin/env ruby
 
-# A few helpful tips about the Rules file:
-#
-# * The order of rules is important: for each item, only the first matching
-#   rule is applied.
-#
-# * Item identifiers start and end with a slash (e.g. “/about/” for the file
-#   “content/about.html”). To select all children, grandchildren, … of an
-#   item, use the pattern “/about/*/”; “/about/*” will also select the parent,
-#   because “*” matches zero or more characters.
+compile '/styles/*' do
+  filter :rainpress
+  filter :relativize_paths, :type => :css
+end
 
-compile '/stylesheet/' do
-  # don’t filter or layout
+compile '/scripts/*' do
+end
+
+# Blog
+compile '/blog/*' do
+  filter :erb
+  layout 'blog'
+end
+
+compile '/static/*' do
 end
 
 compile '*' do
   filter :erb
+  filter :relativize_paths, :type => :html
   layout 'default'
 end
 
-route '/stylesheet/' do
-  '/style.css'
+
+route '/static/*' do
+  # /static/foo.html/ → /foo.html
+  item.identifier[7..-2]
+end
+
+route '/styles/*' do
+  item.identifier[0..-2] + '.css'
+end
+
+route '/scripts/*' do
+  item.identifier[0..-2] + '.js'
 end
 
 route '*' do
