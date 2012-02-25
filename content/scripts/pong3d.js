@@ -8,7 +8,7 @@ var VERTEX_SHADER =
 var FRAGMENT_SHADER = 
 	"precision mediump float;\n"+
 	"void main() {\n"+
-	"	gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"+
+	"	gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"+
 	"}\n";
 	
 function MakeBox(x0, y0, z0, x1, y1, z1) {
@@ -34,13 +34,12 @@ function MakeBox(x0, y0, z0, x1, y1, z1) {
 	};
 }
 
-var box1 = MakeBox(-1, -1, 1.0, 1, 1, 1.0);
-console.log(box1);
+var box = MakeBox(0,0,1,1,1,1);
 
 var vertexShader, fragmentShader, program;
 var cubeVertBuffer, cubeIndicesBuffer;
 var vertexPositionAttribute, modelViewMatrixUniform, projMatrixUniform;
-var mvMatrix, projMatrix;
+var projMatrix;
 
 function Check3DSupport() {
 	var contextNames = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
@@ -78,7 +77,7 @@ function Error3D(msg) {
 function Setup3D() {
 	try {
 		gl.viewport(0, 0, 800, 600);
-		gl.clearColor(1.0, 1.0, 1.0, 1.0);
+		gl.clearColor(0.0, 0.0, 0.0, 0.0);
 
 		vertexShader = CreateShader(gl.VERTEX_SHADER, VERTEX_SHADER);
 		if(!vertexShader) return Error3D("Error creating vertex shader");
@@ -103,18 +102,14 @@ function Setup3D() {
 		modelViewMatrixUniform = gl.getUniformLocation(program, "uModelViewMatrix");
 		projMatrixUniform = gl.getUniformLocation(program, "uProjMatrix");
 		
-		mvMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-		
-		MatScale(mvMatrix, 100, 100, 1);
-		MatRotate(mvMatrix, Math.PI/4.0, 0,0,1);
-		MatTranslate(mvMatrix, 400, 300, 0);
-		console.log(mvMatrix);
-		
 		projMatrix = MatMakeOrthographic(0, 800, 600, 0, 1, -1);
+		
+		gl.uniformMatrix4fv(projMatrixUniform, false, projMatrix);
+		Debug3D("uniformMatrix4fv pr", gl.getError());
 		
 		cubeVertBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertBuffer);
-		var cubeVertArray = new Float32Array(box1.verts);
+		var cubeVertArray = new Float32Array(box.verts);
 		gl.bufferData(gl.ARRAY_BUFFER, cubeVertArray, gl.STATIC_DRAW);
 		
 		gl.enableVertexAttribArray(vertexPositionAttribute);
@@ -122,7 +117,7 @@ function Setup3D() {
 		
 		cubeIndicesBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
-		var cubeIndArray = new Uint16Array(box1.indices);
+		var cubeIndArray = new Uint16Array(box.indices);
 		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cubeIndArray, gl.STATIC_DRAW);
 
 		if(gl.getError() != 0) {
@@ -147,26 +142,75 @@ function Debug3D(module, err) {
 }
 
 function Draw3D(delta) {
-	gl.getError(); // Suppress error before calling the Draw3D function (*ahem* Safari)
+	var mvMatrix;
+	
+	// Suppress error before calling the Draw3D function (*ahem* Safari)
+	gl.getError();
+	
+	// Clear the screen
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	Debug3D("clear", gl.getError());
 	
+	// Draw the first box
+	// ------------------
+	
+	// Construct its modelview matrix
+	mvMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+	MatScale(mvMatrix, 12, 80, 1);
+	MatTranslate(mvMatrix, 4, paddle1Y, 0);
+	
+	// Set the modelview matrix to the shader
 	gl.uniformMatrix4fv(modelViewMatrixUniform, false, mvMatrix);
 	Debug3D("uniformMatrix4fv mv", gl.getError());
 	
-	gl.uniformMatrix4fv(projMatrixUniform, false, projMatrix);
-	Debug3D("uniformMatrix4fv pr", gl.getError());
-	
-	
-	
+	// Bind the cube indices and draw the cube
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
 	Debug3D("bindBuffer", gl.getError());
 	
 	gl.drawElements(gl.TRIANGLES, 15, gl.UNSIGNED_SHORT, 0);
 	Debug3D("drawElements", gl.getError());
 	
-	gl.finish();
+	// Draw the second box
+	// -------------------
 	
+	// Construct its modelview matrix
+	mvMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+	MatScale(mvMatrix, 12, 80, 1);
+	MatTranslate(mvMatrix, WIDTH-12-4, paddle2Y, 0);
+	
+	// Set the modelview matrix to the shader
+	gl.uniformMatrix4fv(modelViewMatrixUniform, false, mvMatrix);
+	Debug3D("uniformMatrix4fv mv", gl.getError());
+	
+	// Bind the cube indices and draw the cube
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
+	Debug3D("bindBuffer", gl.getError());
+	
+	gl.drawElements(gl.TRIANGLES, 15, gl.UNSIGNED_SHORT, 0);
+	Debug3D("drawElements", gl.getError());
+	
+	// Draw the ball
+	// -------------
+	
+	// Construct its modelview matrix
+	mvMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+	MatScale(mvMatrix, 11, 11, 1);
+	MatTranslate(mvMatrix, ballX, ballY, 0);
+	
+	// Set the modelview matrix to the shader
+	gl.uniformMatrix4fv(modelViewMatrixUniform, false, mvMatrix);
+	Debug3D("uniformMatrix4fv mv", gl.getError());
+	
+	// Bind the cube indices and draw the cube
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
+	Debug3D("bindBuffer", gl.getError());
+	
+	gl.drawElements(gl.TRIANGLES, 15, gl.UNSIGNED_SHORT, 0);
+	Debug3D("drawElements", gl.getError());
+	
+	// Finish, so that the screen can go ahead and render while we do the rest
+	// of our per-frame processing
+	gl.finish();
 	Debug3D("finish", gl.getError());
 }
 
@@ -227,6 +271,20 @@ function MatIdx(row,col) {
 	return col*4+row;
 }
 
+function MatMakeAdd(mat0, mat1) {
+	var matResult = [];
+	MatAdd(matResult, mat0, mat1);
+	return matResult;
+}
+
+function MatAdd(matResult, mat0, mat1) {
+	var i;
+	
+	for(i=0; i<16; i++) {
+		matResult[i] = mat0[i] + mat1[i];
+	}
+}
+
 function MatMakeMultiply(mat0, mat1) {
 	var matResult = [];
 	MatMultiply(matResult, mat0, mat1);
@@ -235,6 +293,17 @@ function MatMakeMultiply(mat0, mat1) {
 
 function MatMultiply(matResult, mat0, mat1) {
 	var i, j, k;
+	
+	// If mat0 or mat1 == matResult, the multiply will mess up. Make copies
+	// to account for this. This allows you to do something like:
+	//     MatMultiply(mvMatrix, someTranslation, mvMatrix);
+	
+	if(matResult == mat0) {
+		mat0 = mat0.slice(0); // clone
+	}
+	if(matResult == mat1) {
+		mat1 = mat1.slice(0); // clone
+	}
 	
 	for(i=0; i<16; i++) {
 		matResult[i] = 0;
@@ -285,11 +354,5 @@ function MatRotate(mat4, angle_rad, x, y, z) {
 		1
 	];
 	
-	resultMat = [];
-	
-	MatMultiply(resultMat, rotMat, mat4);
-	
-	for(i=0; i<16; i++) {
-		mat4[i] = resultMat[i];
-	}
+	MatMultiply(mat4, rotMat, mat4);
 }
