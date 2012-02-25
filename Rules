@@ -30,10 +30,12 @@ route '/static/*' do
 end
 
 route '/styles/*' do
+  # /styles/default/ → /styles/default.css
   item.identifier[0..-2] + '.css'
 end
 
 route '/scripts/*' do
+  # /scripts/main/ → /styles/main.js
   item.identifier[0..-2] + '.js'
 end
 
