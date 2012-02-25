@@ -1,5 +1,5 @@
 /* constants */
-var SLEEPTIME = 13; // time between updates
+var SLEEPTIME = 1000/60; // time between updates
 var PAUSEDSLEEPTIME = 100;
 var WIDTH = 800;
 var HEIGHT = 600;
@@ -9,8 +9,10 @@ var PADDLEHEIGHT = 80;
 var PADDLEOFFSET = 4; // distance from edge of field
 var PADDLEMAXSPEED = (1000/1000); // in pixels per millisecond
 var MAXBOUNCEANGLE = (Math.PI/12);
+var SUPPORTS3D = !!window.WebGLRenderingContext;
 
 /* global variables */
+var mode3D = SUPPORTS3D;
 var paused = false;
 var score1=0, score2=0;
 var lastTime;
@@ -28,6 +30,8 @@ var pongtable;
 var content;
 var ball;
 var paddle1, paddle2;
+var canvas, gl;
+
 
 window.onload = function () {
 	// load all element variables
@@ -37,17 +41,22 @@ window.onload = function () {
 	ball = document.getElementById("pong_ball");
 	paddle1 = document.getElementById("pong_paddle1");
 	paddle2 = document.getElementById("pong_paddle2");
+	canvas = document.getElementById("pong_table_3d");
+	
+	Check3DSupport();
 	
 	// clear the field
 	UpdateScores();
 	ResetBall();
-	SetBallPos();
 	ResetPaddles();
-	SetPaddlePos();
+	if(!SUPPORTS3D) {
+		SetBallPos();
+		SetPaddlePos();
+	}
 	
 	// start the frame loop
 	lastTime = new Date();
-	setTimeout(Frame,1);
+	Frame();
 	
 	// bind keypress event
 	document.body.onmousedown = MouseDown;
@@ -57,13 +66,36 @@ window.onload = function () {
 	return true;
 }
 
+window.requestFrame = 
+	window.requestAnimationFrame || 
+	window.webkitRequestAnimationFrame || 
+	window.mozRequestAnimationFrame || 
+	window.oRequestAnimationFrame || 
+	window.msRequestAnimationFrame || 
+	function(callback, element) { return window.setTimeout(callback, SLEEPTIME); };
+
+window.cancelFrame =
+	window.cancelRequestAnimationFrame ||
+	window.webkitCancelRequestAnimationFrame ||
+	window.mozCancelRequestAnimationFrame ||
+	window.oCancelRequestAnimationFrame ||
+	window.msCancelRequestAnimationFrame ||
+	window.clearTimeout;
+
 function Frame() {
 	var currTime = new Date();
 	var millis = currTime.getTime() - lastTime.getTime();
 	lastTime = currTime;
 	
-	if(!paused) {
-		// do framely stuff here
+	if(paused) {
+		setTimeout(Frame, PAUSEDSLEEPTIME);
+	} else {
+		window.requestFrame(Frame, canvas);
+		
+		if(SUPPORTS3D) {
+			Draw3D(millis);
+		}
+		
 		ProcessAI1();
 		ProcessAI2();
 		UpdatePaddlePos(millis,0);
@@ -73,11 +105,6 @@ function Frame() {
 		SetBallPos();
 		SetPaddlePos();
 	}
-	
-	if(paused)
-		setTimeout(Frame,PAUSEDSLEEPTIME);
-	else
-		setTimeout(Frame,SLEEPTIME);
 }
 
 function UpdateBallPos(ms) {
@@ -165,9 +192,11 @@ function ResetBall() {
 }
 
 function SetBallPos() {
-	// update the ball element to match the ballX & ballY variables
-	ball.style.left = ballX+"px";
-	ball.style.top = ballY+"px";
+	if(ball) {
+		// update the ball element to match the ballX & ballY variables
+		ball.style.left = ballX+"px";
+		ball.style.top = ballY+"px";
+	}
 }
 
 function ResetPaddles() {
@@ -179,9 +208,11 @@ function ResetPaddles() {
 }
 
 function SetPaddlePos() {
-	// update the paddle elements to match the paddle Y variables
-	paddle1.style.top = paddle1Y+"px";
-	paddle2.style.top = paddle2Y+"px";
+	if(paddle1 && paddle2) {
+		// update the paddle elements to match the paddle Y variables
+		paddle1.style.top = paddle1Y+"px";
+		paddle2.style.top = paddle2Y+"px";
+	}
 }
 
 function UpdatePaddlePos(ms,paddle) {
@@ -210,8 +241,10 @@ function UpdatePaddlePos(ms,paddle) {
 }
 
 function UpdateScores() {
-	UpdateScore(1);
-	UpdateScore(2);
+	if(!SUPPORTS3D) {
+		UpdateScore(1);
+		UpdateScore(2);
+	}
 }
 
 function UpdateScore(player) {
@@ -298,7 +331,7 @@ function UpdateScore(player) {
 			}
 			childIdx++;
 		}
-	}
+	};
 	UpdateNumber(number1,tensPieces);
 	UpdateNumber(number2,onesPieces);
 }
