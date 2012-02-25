@@ -14,25 +14,27 @@ var FRAGMENT_SHADER =
 	
 function MakeBox(x0, y0, z0, x1, y1, z1) {
 	return {
+		renderType : 0x0001, /* LINES */
 		verts : [
 			x0, y0, z0,
 			x1, y0, z0,
 			x1, y1, z0,
 			x0, y1, z0,
-			x1, y0, x1,
+			x1, y0, z1,
 			x0, y0, z1,
 			x0, y1, z1,
 			x1, y1, z1
 		],
+		vertsBuf : null,
 		indices : [
-		
+		/*
 			0, 1, 2, 0, 2, 3, // front
 			1, 4, 7, 1, 7, 2, // right
 			4, 5, 6, 4, 6, 7, // back
 			5, 0, 3, 5, 3, 6, // left
 			3, 2, 7, 3, 7, 6, // top
 			5, 4, 1, 5, 1, 0  // bottom
-		/*
+		*/
 			0, 1, 1, 2, 2, 0,
 			0, 2, 2, 3, 3, 0,
 			1, 4, 4, 7, 7, 1,
@@ -45,17 +47,19 @@ function MakeBox(x0, y0, z0, x1, y1, z1) {
 			3, 7, 7, 6, 6, 3,
 			5, 4, 4, 1, 1, 5,
 			5, 1, 1, 0, 0, 5
-		*/
-		]
+		],
+		indicesBuf: null
 	};
 }
 
-var box = MakeBox(0,0,-10,1,1,0);
+var box = MakeBox(0,0,-0.5,1,1,0.5);
+var playingField = MakeBox(0, 0, -0.5, WIDTH, HEIGHT, 0.5);
 
 var vertexShader, fragmentShader, program;
-var cubeVertBuffer, cubeIndicesBuffer;
 var vertexPositionAttribute, modelViewMatrixUniform, cameraMatrixUniform, projMatrixUniform;
 var projMatrix;
+
+var ballTexture, ballImage;
 
 function Check3DSupport() {
 	var contextNames = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
@@ -114,7 +118,12 @@ function Setup3D() {
 		
 		gl.useProgram(program);
 		
+		ballTexture = gl.createTexture();
+		ballImage = new Image();
+		ballImage.src = "images/ball.png";
+		
 		vertexPositionAttribute = gl.getAttribLocation(program, "vPosition");
+		gl.enableVertexAttribArray(vertexPositionAttribute);
 		modelViewMatrixUniform = gl.getUniformLocation(program, "uModelViewMatrix");
 		cameraMatrixUniform = gl.getUniformLocation(program, "uCameraMatrix");
 		projMatrixUniform = gl.getUniformLocation(program, "uProjMatrix");
@@ -125,18 +134,37 @@ function Setup3D() {
 		gl.uniformMatrix4fv(projMatrixUniform, false, projMatrix);
 		Debug3D("uniformMatrix4fv pr", gl.getError());
 		
-		cubeVertBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertBuffer);
-		var cubeVertArray = new Float32Array(box.verts);
-		gl.bufferData(gl.ARRAY_BUFFER, cubeVertArray, gl.STATIC_DRAW);
 		
-		gl.enableVertexAttribArray(vertexPositionAttribute);
-		gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+		// Initialize box
+		box.vertsBuf = gl.createBuffer();
+		Debug3D("createBoxVertsBuf", gl.getError());
+		gl.bindBuffer(gl.ARRAY_BUFFER, box.vertsBuf);
+		Debug3D("bindBoxVertsBuf", gl.getError());
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(box.verts), gl.STATIC_DRAW);
+		Debug3D("bufBoxVertsBuf", gl.getError());
 		
-		cubeIndicesBuffer = gl.createBuffer();
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
-		var cubeIndArray = new Uint16Array(box.indices);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, cubeIndArray, gl.STATIC_DRAW);
+		box.indicesBuf = gl.createBuffer();
+		Debug3D("createBoxIndBuf", gl.getError());
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, box.indicesBuf);
+		Debug3D("bindBoxIndBuf", gl.getError());
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(box.indices), gl.STATIC_DRAW);
+		Debug3D("bufBoxIndBuf", gl.getError());
+		
+		// Initialize playingField
+		playingField.vertsBuf = gl.createBuffer();
+		Debug3D("createPFVertBuf", gl.getError());
+		gl.bindBuffer(gl.ARRAY_BUFFER, playingField.vertsBuf);
+		Debug3D("bindPFVertBuf", gl.getError());
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(playingField.verts), gl.STATIC_DRAW);
+		Debug3D("bufPFVertBuf", gl.getError());
+		
+		playingField.indicesBuf = gl.createBuffer();
+		Debug3D("createPFIndBuf", gl.getError());
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, playingField.indicesBuf);
+		Debug3D("bindPFIndBuf", gl.getError());
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(playingField.indices), gl.STATIC_DRAW);
+		Debug3D("bufPFIndBuf", gl.getError());
+		
 
 		if(gl.getError() != 0) {
 			console.log("There was an error " + gl.getError());
@@ -173,7 +201,7 @@ function Draw3D(delta) {
 	// Set the camera matrix
 	// ---------------------
 	
-	/*
+	
 	camOffsetX = mouseX; // [-inf,inf]
 	if(camOffsetX < 0) camOffsetX = 0; // [0,inf]
 	else if(camOffsetX > WIDTH) camOffsetX = WIDTH; // [0,width]
@@ -187,14 +215,15 @@ function Draw3D(delta) {
 	camOffsetY /= HEIGHT;
 	camOffsetY -= 0.5;
 	camOffsetY *= Math.PI/2.0;
-	*/
+	
 	
 	
 	camMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-	//MatRotate(camMatrix, camOffsetX, 0, 1, 0);
-	MatTranslate(camMatrix, 0, -HEIGHT/2, 0);
+	MatTranslate(camMatrix, -WIDTH/2, -HEIGHT/2, 0);
+	MatRotate(camMatrix, camOffsetX, 0, 1, 0);
+	MatRotate(camMatrix, camOffsetY, 1, 0, 0);
 	//MatSkewX(camMatrix, camOffsetX, 1.0);
-	MatTranslate(camMatrix, 0, HEIGHT/2, 0);
+	MatTranslate(camMatrix, WIDTH/2, HEIGHT/2, 0);
 	
 	gl.uniformMatrix4fv(cameraMatrixUniform, false, camMatrix);
 	
@@ -210,11 +239,15 @@ function Draw3D(delta) {
 	gl.uniformMatrix4fv(modelViewMatrixUniform, false, mvMatrix);
 	Debug3D("uniformMatrix4fv mv", gl.getError());
 	
-	// Bind the cube indices and draw the cube
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
+	// Bind the cube verts and indices and draw the cube
+	gl.bindBuffer(gl.ARRAY_BUFFER, box.vertsBuf);
+	Debug3D("bindBuffer", gl.getError());
+	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+	Debug3D("vertAttrPoint", gl.getError());
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, box.indicesBuf);
 	Debug3D("bindBuffer", gl.getError());
 	
-	gl.drawElements(gl.TRIANGLES, 15, gl.UNSIGNED_SHORT, 0);
+	gl.drawElements(box.renderType, box.indices.length, gl.UNSIGNED_SHORT, 0);
 	Debug3D("drawElements", gl.getError());
 	
 	// Draw the second box
@@ -229,11 +262,15 @@ function Draw3D(delta) {
 	gl.uniformMatrix4fv(modelViewMatrixUniform, false, mvMatrix);
 	Debug3D("uniformMatrix4fv mv", gl.getError());
 	
-	// Bind the cube indices and draw the cube
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
+	// Bind the cube verts and indices and draw the cube
+	gl.bindBuffer(gl.ARRAY_BUFFER, box.vertsBuf);
+	Debug3D("bindBuffer", gl.getError());
+	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+	Debug3D("vertAttrPoint", gl.getError());
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, box.indicesBuf);
 	Debug3D("bindBuffer", gl.getError());
 	
-	gl.drawElements(gl.TRIANGLES, 15, gl.UNSIGNED_SHORT, 0);
+	gl.drawElements(box.renderType, box.indices.length, gl.UNSIGNED_SHORT, 0);
 	Debug3D("drawElements", gl.getError());
 	
 	// Draw the ball
@@ -248,12 +285,41 @@ function Draw3D(delta) {
 	gl.uniformMatrix4fv(modelViewMatrixUniform, false, mvMatrix);
 	Debug3D("uniformMatrix4fv mv", gl.getError());
 	
-	// Bind the cube indices and draw the cube
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeIndicesBuffer);
+	// Bind the cube verts and indices and draw the cube
+	gl.bindBuffer(gl.ARRAY_BUFFER, box.vertsBuf);
+	Debug3D("bindBuffer", gl.getError());
+	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+	Debug3D("vertAttrPoint", gl.getError());
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, box.indicesBuf);
 	Debug3D("bindBuffer", gl.getError());
 	
-	gl.drawElements(gl.TRIANGLES, 15, gl.UNSIGNED_SHORT, 0);
+	gl.drawElements(box.renderType, box.indices.length, gl.UNSIGNED_SHORT, 0);
 	Debug3D("drawElements", gl.getError());
+	
+	// Draw the playing field
+	// ----------------------
+	
+	// playingField
+	// Construct its modelview matrix
+	mvMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+	//MatScale(mvMatrix, 11, 11, 1);
+	//MatTranslate(mvMatrix, ballX, ballY, 0);
+	
+	// Set the modelview matrix to the shader
+	gl.uniformMatrix4fv(modelViewMatrixUniform, false, mvMatrix);
+	Debug3D("uniformMatrix4fv mv", gl.getError());
+	
+	// Bind the cube verts and indices and draw the cube
+	gl.bindBuffer(gl.ARRAY_BUFFER, playingField.vertsBuf);
+	Debug3D("bindBuffer", gl.getError());
+	gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+	Debug3D("vertAttrPoint", gl.getError());
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, playingField.indicesBuf);
+	Debug3D("bindBuffer", gl.getError());
+	
+	gl.drawElements(playingField.renderType, playingField.indices.length, gl.UNSIGNED_SHORT, 0);
+	Debug3D("drawElements", gl.getError());
+	
 	
 	// Finish, so that the screen can go ahead and render while we do the rest
 	// of our per-frame processing
