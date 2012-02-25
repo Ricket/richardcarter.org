@@ -1,4 +1,4 @@
-var mouseY;
+var mouseX, mouseY;
 var mouseYOffset;
 var controllingPaddle = 0;
 function MouseDown(e) {
@@ -29,38 +29,37 @@ function MouseDown(e) {
 			paddle2Vy = 0;
 			mouseYOffset = mouseY - paddle2Y;
 		}
-		document.onmousemove = ControlPaddle;
 		return false;
 	} else
 		return true;
 }
 
-function ControlPaddle(e) { // called on mouse move while button is down
+document.onmousemove = function(e) { // called on mouse move while button is down
 	if(!e) var e = window.event;
 
-	var posY = -1;
 	if (e.pageX || e.pageY) 	{
-		posY = e.pageY - page.offsetTop;
+		mouseX = e.pageX - page.offsetLeft;
+		mouseY = e.pageY - page.offsetTop;
 	}
 	else if (e.clientX || e.clientY) 	{
-		posY = e.clientY + document.body.scrollTop
-			+ document.documentElement.scrollTop - page.offsetTop;
+		mouseX = e.clientX + document.body.scrollTop + document.documentElement.scrollTop - page.offsetLeft;
+		mouseY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - page.offsetTop;
 	}
-	if(posY > -1) {
-		if(controllingPaddle == 1)
-			paddle1Y = posY - mouseYOffset;
-		else if(controllingPaddle == 2)
-			paddle2Y = posY - mouseYOffset;
+
+	if(controllingPaddle == 1)
+		paddle1Y = mouseY - mouseYOffset;
+	else if(controllingPaddle == 2)
+		paddle2Y = mouseY - mouseYOffset;
+	
+	if(controllingPaddle > 0) {
 		UpdatePaddlePos(controllingPaddle);
 		SetPaddlePos();
-		
-		mouseY = posY;
 	}
+	
 	return true;
 }
 
 function MouseUp(e) {
-	document.onmousemove = null;
 	controllingPaddle = 0;
 	return true;
 }

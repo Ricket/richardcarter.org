@@ -1,9 +1,10 @@
 var VERTEX_SHADER = 
 	"uniform mat4 uModelViewMatrix;\n"+
+	"uniform mat4 uCameraMatrix;\n"+
 	"uniform mat4 uProjMatrix;\n"+
 	"attribute vec3 vPosition;\n"+
 	"void main() {\n"+
-	"	gl_Position = uProjMatrix * (uModelViewMatrix * vec4(vPosition, 1.0));\n"+
+	"	gl_Position = uProjMatrix * (uCameraMatrix * (uModelViewMatrix * vec4(vPosition, 1.0)));\n"+
 	"}\n";
 var FRAGMENT_SHADER = 
 	"precision mediump float;\n"+
@@ -24,21 +25,36 @@ function MakeBox(x0, y0, z0, x1, y1, z1) {
 			x1, y1, z1
 		],
 		indices : [
+		
 			0, 1, 2, 0, 2, 3, // front
 			1, 4, 7, 1, 7, 2, // right
 			4, 5, 6, 4, 6, 7, // back
 			5, 0, 3, 5, 3, 6, // left
 			3, 2, 7, 3, 7, 6, // top
 			5, 4, 1, 5, 1, 0  // bottom
+		/*
+			0, 1, 1, 2, 2, 0,
+			0, 2, 2, 3, 3, 0,
+			1, 4, 4, 7, 7, 1,
+			1, 7, 7, 2, 2, 1,
+			4, 5, 5, 6, 6, 4,
+			4, 6, 6, 7, 7, 4,
+			5, 0, 0, 3, 3, 5,
+			5, 3, 3, 6, 6, 5,
+			3, 2, 2, 7, 7, 3,
+			3, 7, 7, 6, 6, 3,
+			5, 4, 4, 1, 1, 5,
+			5, 1, 1, 0, 0, 5
+		*/
 		]
 	};
 }
 
-var box = MakeBox(0,0,1,1,1,1);
+var box = MakeBox(0,0,-10,1,1,0);
 
 var vertexShader, fragmentShader, program;
 var cubeVertBuffer, cubeIndicesBuffer;
-var vertexPositionAttribute, modelViewMatrixUniform, projMatrixUniform;
+var vertexPositionAttribute, modelViewMatrixUniform, cameraMatrixUniform, projMatrixUniform;
 var projMatrix;
 
 function Check3DSupport() {
@@ -100,9 +116,11 @@ function Setup3D() {
 		
 		vertexPositionAttribute = gl.getAttribLocation(program, "vPosition");
 		modelViewMatrixUniform = gl.getUniformLocation(program, "uModelViewMatrix");
+		cameraMatrixUniform = gl.getUniformLocation(program, "uCameraMatrix");
 		projMatrixUniform = gl.getUniformLocation(program, "uProjMatrix");
 		
-		projMatrix = MatMakeOrthographic(0, 800, 600, 0, 1, -1);
+		projMatrix = MatMakeOrthographic(0, 800, 600, 0, 1000, -1000);
+		//projMatrix = MatMakePerspective();
 		
 		gl.uniformMatrix4fv(projMatrixUniform, false, projMatrix);
 		Debug3D("uniformMatrix4fv pr", gl.getError());
@@ -142,7 +160,8 @@ function Debug3D(module, err) {
 }
 
 function Draw3D(delta) {
-	var mvMatrix;
+	var mvMatrix, camMatrix;
+	var camOffsetX, camOffsetY;
 	
 	// Suppress error before calling the Draw3D function (*ahem* Safari)
 	gl.getError();
@@ -150,6 +169,34 @@ function Draw3D(delta) {
 	// Clear the screen
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	Debug3D("clear", gl.getError());
+	
+	// Set the camera matrix
+	// ---------------------
+	
+	/*
+	camOffsetX = mouseX; // [-inf,inf]
+	if(camOffsetX < 0) camOffsetX = 0; // [0,inf]
+	else if(camOffsetX > WIDTH) camOffsetX = WIDTH; // [0,width]
+	camOffsetX /= WIDTH; // [0,1]
+	camOffsetX -= 0.5; // [-0.5, 0.5]
+	camOffsetX *= Math.PI/2.0; // [-45deg,45deg]
+	
+	camOffsetY = mouseY;
+	if(camOffsetY < 0) camOffsetY = 0;
+	else if(camOffsetY > HEIGHT) camOffsetY = HEIGHT;
+	camOffsetY /= HEIGHT;
+	camOffsetY -= 0.5;
+	camOffsetY *= Math.PI/2.0;
+	*/
+	
+	
+	camMatrix = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+	//MatRotate(camMatrix, camOffsetX, 0, 1, 0);
+	MatTranslate(camMatrix, 0, -HEIGHT/2, 0);
+	//MatSkewX(camMatrix, camOffsetX, 1.0);
+	MatTranslate(camMatrix, 0, HEIGHT/2, 0);
+	
+	gl.uniformMatrix4fv(cameraMatrixUniform, false, camMatrix);
 	
 	// Draw the first box
 	// ------------------
@@ -250,7 +297,7 @@ function MatMakeOrthographic(left, right, bottom, top, near, far) {
 	return [
 		2.0 / (right-left), 0, 0, 0,
 		0, 2.0 / (top-bottom), 0, 0,
-		0, 0, 2.0 / (far-near), 0,
+		0, 0, -2.0 / (far-near), 0,
 		-(right+left)/(right-left), -(top+bottom)/(top-bottom), -(far+near)/(far-near), 1
 	];
 }
@@ -355,4 +402,14 @@ function MatRotate(mat4, angle_rad, x, y, z) {
 	];
 	
 	MatMultiply(mat4, rotMat, mat4);
+}
+
+function MatSkewX(mat4, angle_rad, amount) {
+	var skewMat = [
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		amount*Math.tan(angle_rad), 0, 1, 0,
+		0, 0, 0, 1
+	];
+	MatMultiply(mat4, skewMat, mat4);
 }
