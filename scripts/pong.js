@@ -1,3 +1,5 @@
+window.console = window.console || {log:function(msg){}};
+
 /* constants */
 var SLEEPTIME = 1000/60; // time between updates
 var PAUSEDSLEEPTIME = 100;

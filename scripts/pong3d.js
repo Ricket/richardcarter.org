@@ -1,3 +1,5 @@
+window.console = window.console || {log:function(msg){}};
+
 var VERTEX_SHADER = 
 	"uniform mat4 uModelViewMatrix;\n"+
 	"uniform mat4 uCameraMatrix;\n"+
