@@ -1,3 +1,5 @@
+window.console = window.console || {log:function(msg){}};
+
 /* Remember! Modify velocities, not positions! */
 
 function ProcessAI1() {

@@ -1,3 +1,5 @@
+window.console = window.console || {log:function(msg){}};
+
 var mouseX, mouseY;
 var mouseYOffset;
 var controllingPaddle = 0;
