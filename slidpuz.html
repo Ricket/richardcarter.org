@@ -1,0 +1,200 @@
+<html>
+<head>
+<title>sliding puzzle : richard carter - nc state student and game developer</title>
+<style type="text/css">
+#puzzle {
+	width:248px;			/* PieceSize*4+8 */
+	height:248px;
+	padding:0;
+	border:1px solid #B0B0B0;
+}
+
+#scramblewait {
+	display:none;
+	z-index:5;
+	background-color:#FFFFFF;
+	color:#000000;
+	width:248px;			/* PieceSize*4+8 */
+	height:248px;
+	padding:0;
+	text-align:center;
+	font-size:30px;
+	border:1px solid #B0B0B0;
+}
+
+.piece {
+	position:absolute;
+	margin:0;
+	width:60px;				/* PieceSize */
+	height:60px;
+	text-align:center;
+	font-size:52px;
+	border:1px solid #000000;
+}
+
+* html #puzzle {
+	width:250px;			/* PieceSize*4+10 */
+	height:250px;
+}
+
+* html #scramblewait {
+	width:250px;			/* PieceSize*4+10 */
+	height:250px;
+}
+
+* html .piece {
+	width:62px;				/* PieceSize+2 */
+	height:62px;
+}
+</style>
+<script language="Javascript">
+var TimeToSlide = 150; // amount of time taken to slide one piece
+var ScrambleTime = 1000; // time taken to scramble the board
+var ScrambleIterations = 10000; // minimum scramble iterations
+var PieceSize = 60;
+
+// -------------- //
+function recalcPositions() {
+	for(var i=1;i<=16;i++) {
+		if(spacesMap[i-1]==0) continue;
+		var pc=document.getElementById("piece"+spacesMap[i-1]);
+		if(!pc) continue;
+		pc.style.left=document.getElementById("puzzle").offsetLeft+((((i-1)%4)*(PieceSize+2))+1);
+		pc.style.top=document.getElementById("puzzle").offsetTop+((Math.floor((i-1)/4)*(PieceSize+2))+1);
+	}
+}
+window.onload = function () {
+	for(var i=0;i<16;i++) {
+		spacesMap[i] = i+1;
+	}
+	spacesMap[15] = 0;
+	// scramble();
+	recalcPositions();
+};
+window.onresize = recalcPositions;
+
+var MoveUpdateTimeout;
+
+document.onkeyup = function (e) {
+	if(!e) var e = window.event;
+	if(!userCanShift) {
+		clearTimeout(MoveUpdateTimeout);
+		if(!userCanShift) { // to handle possible concurrency problems
+			shiftStart = (new Date()).getTime() - TimeToSlide;
+			updateMove();
+		}
+	}
+	if(!userCanShift) {
+		// still can't shift; error, should never happen
+		return;
+	}
+
+	// e.keyCode
+	// L U R D - 37, 38, 39, 40
+	if(e.keyCode>=37 && e.keyCode<=40) {
+		userCanShift = false;
+		shiftDir = e.keyCode-37;
+		shiftTileNum = vecToScalar(scalarToVec(emptySpace)[0]-dirToOffsets(shiftDir)[0],scalarToVec(emptySpace)[1]-dirToOffsets(shiftDir)[1]);
+		if(isNaN(shiftTileNum) || shiftTileNum<0 || shiftTileNum>15) {
+			userCanShift = true;
+			return;
+		}
+		shiftTile = document.getElementById("piece"+spacesMap[shiftTileNum]);
+		shiftStart = (new Date()).getTime();
+		setTimeout(updateMove,1);
+	}
+}
+
+function updateMove() {
+	if((new Date()).getTime()>=shiftStart+TimeToSlide) {
+		spacesMap[emptySpace]=spacesMap[shiftTileNum];
+		spacesMap[shiftTileNum]=0;
+		emptySpace=shiftTileNum;
+		recalcPositions();
+		userCanShift = true;
+	} else {
+		var offsetX = dirToOffsets(shiftDir)[0]*((new Date()).getTime()-shiftStart)/TimeToSlide;
+		shiftTile.style.left = parseInt(document.getElementById("puzzle").offsetLeft)+1+(((shiftTileNum+offsetX)%4)*(PieceSize+2));
+		var offsetY = dirToOffsets(shiftDir)[1]*((new Date()).getTime()-shiftStart)/TimeToSlide;
+		shiftTile.style.top = parseInt(document.getElementById("puzzle").offsetTop)+1+((Math.floor(shiftTileNum/4)+offsetY)*(PieceSize+2));
+		MoveUpdateTimeout = setTimeout(updateMove,10);
+	}
+}
+
+function vecToScalar(arr) {
+	if(typeof(arguments[0])=="number" && typeof(arguments[1])=="number") {
+		if(arguments[0]<0||arguments[0]>3||arguments[1]<0||arguments[1]>3) return;
+		return (arguments[1]*4+arguments[0]);
+	} else if(typeof(arr)=="object" && arr.length==2) {
+		if(arr[0]<0||arr[0]>3||arr[1]<0||arr[1]>3) return;
+		return (arr[1]*4+arr[0]);
+	} else {
+		return -1;
+	}
+}
+function scalarToVec(pos) {return [pos%4, Math.floor(pos/4)];}
+
+function dirToOffsets(dir) {return [(dir-1)%2,(dir-2)%2];}
+function offsetsToDir(xoff,yoff) {return ((xoff!=0)?xoff+1:0)+((yoff!=0)?yoff+2:0);}
+
+var userCanShift = true;
+var emptySpace = 15;
+var spacesMap = new Array(16);
+
+var shiftTile = null;
+var shiftTileNum = 0;
+var shiftDir = 0;
+var shiftStart = 0;
+
+function buttonClick() {
+	userCanShift = false;
+	var sw = document.getElementById("scramblewait");
+	if(sw) {
+		sw.style.display="block";
+		sw.style.position="absolute";
+		sw.style.top = document.getElementById("puzzle").offsetTop;
+		sw.style.left = document.getElementById("puzzle").offsetLeft;
+	}
+	setTimeout(scramble,500);
+}
+
+function scramble() {
+	userCanShift = false;
+	if((new Date()).getTime()<shiftStart+TimeToSlide)
+		setTimeout(scramble,shiftStart+50+TimeToSlide-(new Date()).getTime());
+	var startTime = (new Date()).getTime();
+	var iters = 0;
+	while((new Date()).getTime()<startTime+ScrambleTime || iters<ScrambleIterations) {
+		for(var i=0;i<500;i++) {
+			var firstTileNum = emptySpace;
+			var secondTileNum=-1;
+			while(secondTileNum<0) {
+				var rnd = Math.floor(Math.random()*4);
+				if(rnd==0 && firstTileNum%4>0) secondTileNum=firstTileNum-1;
+				else if(rnd==1 && Math.floor(firstTileNum/4)>0) secondTileNum=firstTileNum-4;
+				else if(rnd==2 && firstTileNum%4<3) secondTileNum=firstTileNum+1;
+				else if(rnd==3 && Math.floor(firstTileNum/4)<3) secondTileNum=firstTileNum+4;
+			}
+			var temp = spacesMap[firstTileNum];
+			spacesMap[firstTileNum]=spacesMap[secondTileNum];
+			spacesMap[secondTileNum]=temp;
+			emptySpace = secondTileNum;
+			iters++;
+		}
+	}
+	recalcPositions();
+	var sw = document.getElementById("scramblewait");
+	if(sw) sw.style.display="none";
+	userCanShift = true;
+}
+</script>
+</head>
+<body>
+<center>
+<div id="puzzle"></div>
+<div id="scramblewait">scrambling, please wait...</div>
+<div id="piece1"  class="piece"> 1</div><div id="piece2"  class="piece"> 2</div><div id="piece3"  class="piece"> 3</div><div id="piece4"  class="piece"> 4</div><div id="piece5"  class="piece"> 5</div><div id="piece6"  class="piece"> 6</div><div id="piece7"  class="piece"> 7</div><div id="piece8"  class="piece"> 8</div><div id="piece9"  class="piece"> 9</div><div id="piece10" class="piece">10</div><div id="piece11" class="piece">11</div><div id="piece12" class="piece">12</div><div id="piece13" class="piece">13</div><div id="piece14" class="piece">14</div><div id="piece15" class="piece">15</div></div>
+<div id="buttons"><input type="button" name="btnScramble" value="scramble" onclick="buttonClick()" /></div>
+</center>
+</body>
+</html>
