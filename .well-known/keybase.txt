@@ -1,0 +1,66 @@
+==================================================================
+https://keybase.io/ricket
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of http://richardcarter.org
+  * I am ricket (https://keybase.io/ricket) on keybase.
+  * I have a public key with fingerprint AFD3 970F 6E7E 3737 7EA9  FE4F 3996 81F2 B4AA 9007
+
+To claim this, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "fingerprint": "afd3970f6e7e37377ea9fe4f399681f2b4aa9007",
+            "host": "keybase.io",
+            "key_id": "399681f2b4aa9007",
+            "uid": "c70b565ef28bd133ab1ad85e247a1c00",
+            "username": "ricket"
+        },
+        "service": {
+            "hostname": "richardcarter.org",
+            "protocol": "http:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "ctime": 1396407051,
+    "expire_in": 157680000,
+    "prev": "88ee0cbd9273efbde012304d66ce272f300dc8ea3871b66a0f4153c03f1e1f79",
+    "seqno": 5,
+    "tag": "signature"
+}
+
+with the aforementioned key, yielding the PGP signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: Keybase OpenPGP v0.1.1
+Comment: https://keybase.io/crypto
+
+yMHrAnicbZFdSBRfGMbX6m9kRCpKFJUxkUl+ndmz87VqaiWSlEFaYAjrmZkzu5M5
+s83OrtpiYlG6BgW1EWGQkJRIhLVCF6nt39QEUcELoY+L0IsWL/qwD0gFPSNFN52b
+4TzP73neM7zDW9bbEuJunq5uGjoeao0bj3732yrygpuDlKjLjZQzSNXitY+iam5s
+eA1VMyknhRQZChxQWMxhyEGOw0hQsEOBgsDytGIXHQgJAHBUFuXRfVaC1IjIh3NU
+nWjk4lJlov6D968ZEgdEhmWwYudFmYYQiTSSeQbbHRyiJQAs0IcNDdVhQhuqVItN
+qimLIlpAlYgWXBv81/cgQ5aQYWIjRzfcJO41dFOX9HPE9pim12mlzUavhddj0fW7
+yCWqmkx+nQQC2PCpukY5aUJKpmo101BgHYADDJ1F4QavamCXahEMx/KAHGsMDpBK
+nscYSKIs2DmIFVHGgLZD4JBZVsJ2zq5AAGSJxwjyHC2yLAKKg2agBKBCY1rhBDLf
+h89rOuVkyDORm1T6VLeGTL+BqaahaPUGW1yCLf6/ddbybAmbEv+sdDB544r66f2p
+d+3Rzs5RfvDk0ZVYbLy0ueZgm3ty7+5I+dz+W8ulk3X368XUaN+PmVDxnsjMUm5i
+eP4Dhlr3pL/oY2w67QUo/DmtbTtLjdqUyoXWubGe6h3HHhx4WHG4W1NubO9K+lry
+P/7My1c7wrvkgdQBd1t6b8rr+q7MiyO57dm/ypnrFQ01LWMZT1P64EwkPvOb/OZR
+dmlaxtb5op1POiqfhYoLQOOZ8S9VZd2FBfti+e6qy8199x4vUOmv+qWkQNlwCJxo
+yTvkep4sNYcrr3hq869Fbr+ERbP9Yt7b0IWe9taR3intSPjOrMtxqezuwMqEuliy
+3JC+5Fx0Tk2sAu11Ffk=
+=xwg3
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/ricket
+
+==================================================================
+
